@@ -18,6 +18,7 @@ class Shortly(object):
         print('__init__')
         self.redis = redis.Redis(config['redis_host'],
                                  config['redis_port'])
+        print('redis methods..', self.redis)
         template_path = os.path.join(os.path.dirname(__file__), 'templates')
         self.jinja_env = Environment(loader=FileSystemLoader(template_path),
                                      autoescape=True)
@@ -58,7 +59,9 @@ class Shortly(object):
         error = None
         url = ''
         if request.method == 'POST':
-            ulr = request.form['url']
+            print('request.form is', request.form)
+            url = request.form['url']
+            print('url is', url)
             if not is_valid_url(url):
                 error = 'Please enter a valid URL'
             else:
@@ -111,6 +114,7 @@ def base36_encode(number):
 def is_valid_url(url):
     ''' '''
     parts = urlparse(url)
+    print('parts.scheme is', parts.scheme)
     return parts.scheme in ('http', 'https')
 
 def create_app(redis_host='localhost', redis_port=6379, with_static=True):
