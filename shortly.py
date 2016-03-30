@@ -1,6 +1,9 @@
 import os
 import redis
-import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 from werkzeug.wrappers import Request, Response
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException, NotFound
@@ -12,7 +15,7 @@ class Shortly(object):
 
     def __init__(self, config):
         ''' '''
-        print '__init__'
+        print('__init__')
         self.redis = redis.Redis(config['redis_host'],
                                  config['redis_port'])
         template_path = os.path.join(os.path.dirname(__file__), 'templates')
@@ -24,28 +27,25 @@ class Shortly(object):
 
     def dispatch_request(self, request):
         ''' '''
-        print 'dispatch_request'
+        print('dispatch_request')
         #return Response('Hello, World!')
-        print 'request.environ is', request.environ
-        print 'type of url_map before bind', type(self.url_map)
         adapter = self.url_map.bind_to_environ(request.environ)
-        print 'type of adapter (url_map after binding)', type(adapter)
         try:
             endpoint, values = adapter.match()
             return getattr(self, 'on_' + endpoint)(request, **values)
-        except HTTPException, e:
+        except HTTPException as e:
             return 'exception!', e
 
     def wsgi_app(self, environ, start_response):
         ''' '''
-        print 'wsgi_app'
+        print('wsgi_app')
         request = Request(environ)
         response = self.dispatch_request(request)
         return response(environ, start_response)
 
     def __call__(self, environ, start_response):
         ''' '''
-        print '__call__'
+        print('__call__')
         return self.wsgi_app(environ, start_response)
 
     def render_template(self, template_name, **context):
@@ -106,17 +106,16 @@ def base36_encode(number):
     while number != 0:
         number, i = divmod(number, 36)
         base36.append('0123456789abcdefghijklmnopqrstuvwxyz'[i])
-        print base36
     return ''.join(reversed(base36))
 
 def is_valid_url(url):
     ''' '''
-    parts = urlparse.urlparse(url)
+    parts = urlparse(url)
     return parts.scheme in ('http', 'https')
 
 def create_app(redis_host='localhost', redis_port=6379, with_static=True):
     ''' '''
-    print 'create_app'
+    print('create_app')
     app = Shortly({'redis_host': redis_host,
                    'redis_port': redis_port})
     if with_static:
