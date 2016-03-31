@@ -12,24 +12,33 @@ from werkzeug.utils import redirect
 from jinja2 import Environment, FileSystemLoader
 
 class Shortly(object):
-
+    '''The magnificent example - Shortly app'''
     def __init__(self, config):
-        ''' '''
+        '''Constructs a Shortly instance'''
+        # starting connection to a redis-server
         self.redis = redis.Redis(config['redis_host'],
                                  config['redis_port'])
+        # sets the template path to a 'templates' directory where this file
+        # resides
         template_path = os.path.join(os.path.dirname(__file__), 'templates')
+        #creating jinja environment
         self.jinja_env = Environment(loader=FileSystemLoader(template_path),
                                      autoescape=True)
+        # mapping of addresses and functions to be invoked
         self.url_map = Map([Rule('/', endpoint='new_url'),
                             Rule('/<short_id>', endpoint='follow_short_link'),
                             Rule('/<short_id>+', endpoint='short_link_details')])
 
     def dispatch_request(self, request):
-        ''' '''
+        '''Dispatches a received request towards its recipient'''
         #return Response('Hello, World!')
+        #creating an adapter object with the url mapping
+        # TODO: check the adapter method in case any non existing url is provided
         adapter = self.url_map.bind_to_environ(request.environ)
         try:
+            # getting the endpoint for an url and the values (if any)
             endpoint, values = adapter.match()
+            # invoking the hander method for the received request
             return getattr(self, 'on_' + endpoint)(request, **values)
         except HTTPException as e:
             return 'exception!', e
@@ -94,7 +103,7 @@ class Shortly(object):
 
 
 def base36_encode(number):
-    ''' '''
+    '''Basic encoding used for providing unque keys in redis'''
     assert number >= 0
     if number == 0:
         return '0'
@@ -105,12 +114,15 @@ def base36_encode(number):
     return ''.join(reversed(base36))
 
 def is_valid_url(url):
-    ''' '''
+    '''Checks a given link for validity'''
+    # splitting an url to components
     parts = urlparse(url)
+    # checks if a given link contains http or https and that is the condition
+    # for validity..
     return parts.scheme in ('http', 'https')
 
 def create_app(redis_host='localhost', redis_port=6379, with_static=True):
-    ''' '''
+    '''Factory function for creating Shortly apps'''
     app = Shortly({'redis_host': redis_host,
                    'redis_port': redis_port})
     if with_static:
@@ -118,8 +130,11 @@ def create_app(redis_host='localhost', redis_port=6379, with_static=True):
             {'/static': os.path.join(os.path.dirname(__file__), 'static')})
     return app
 
-
+# what should be performed if this module is run as standalone app
 if __name__ == '__main__':
+    # importing the web server from werkzeug, it is needed only if we run the
     from werkzeug.serving import run_simple
+    #creating an app
     app = create_app()
+    # running an instance of the application
     run_simple('0.0.0.0', 5000, app, use_debugger=True, use_reloader=True)
