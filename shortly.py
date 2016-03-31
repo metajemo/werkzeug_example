@@ -15,10 +15,8 @@ class Shortly(object):
 
     def __init__(self, config):
         ''' '''
-        print('__init__')
         self.redis = redis.Redis(config['redis_host'],
                                  config['redis_port'])
-        print('redis methods..', self.redis)
         template_path = os.path.join(os.path.dirname(__file__), 'templates')
         self.jinja_env = Environment(loader=FileSystemLoader(template_path),
                                      autoescape=True)
@@ -28,7 +26,6 @@ class Shortly(object):
 
     def dispatch_request(self, request):
         ''' '''
-        print('dispatch_request')
         #return Response('Hello, World!')
         adapter = self.url_map.bind_to_environ(request.environ)
         try:
@@ -39,14 +36,12 @@ class Shortly(object):
 
     def wsgi_app(self, environ, start_response):
         ''' '''
-        print('wsgi_app')
         request = Request(environ)
         response = self.dispatch_request(request)
         return response(environ, start_response)
 
     def __call__(self, environ, start_response):
         ''' '''
-        print('__call__')
         return self.wsgi_app(environ, start_response)
 
     def render_template(self, template_name, **context):
@@ -59,9 +54,7 @@ class Shortly(object):
         error = None
         url = ''
         if request.method == 'POST':
-            print('request.form is', request.form)
             url = request.form['url']
-            print('url is', url)
             if not is_valid_url(url):
                 error = 'Please enter a valid URL'
             else:
@@ -114,19 +107,16 @@ def base36_encode(number):
 def is_valid_url(url):
     ''' '''
     parts = urlparse(url)
-    print('parts.scheme is', parts.scheme)
     return parts.scheme in ('http', 'https')
 
 def create_app(redis_host='localhost', redis_port=6379, with_static=True):
     ''' '''
-    print('create_app')
     app = Shortly({'redis_host': redis_host,
                    'redis_port': redis_port})
     if with_static:
         app.wsgi_app = SharedDataMiddleware(app.wsgi_app,
             {'/static': os.path.join(os.path.dirname(__file__), 'static')})
     return app
-
 
 
 if __name__ == '__main__':
