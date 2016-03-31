@@ -80,7 +80,7 @@ class Shortly(object):
         self.redis.set('reverse-url:' + url, short_id)
         return short_id
 
-    def on_short_link_detail(self, request, short_id):
+    def on_short_link_details(self, request, short_id):
         ''' '''
         link_target = self.redis.get('url-target:' + short_id)
         if link_target is None:
